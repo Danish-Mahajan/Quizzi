@@ -1,6 +1,8 @@
 package com.example.quizapp.service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -10,7 +12,9 @@ import org.springframework.stereotype.Service;
 import com.example.quizapp.dao.QuestionDao;
 import com.example.quizapp.dao.QuizDao;
 import com.example.quizapp.model.Question;
+import com.example.quizapp.model.QuestionWrapper;
 import com.example.quizapp.model.Quiz;
+import com.example.quizapp.model.Response;
 
 @Service
 public class QuizService {
@@ -32,5 +36,39 @@ public class QuizService {
 
         return new ResponseEntity<>("Success",HttpStatus.CREATED);
 
+    }
+
+    public ResponseEntity<List<QuestionWrapper>> getQuizQuestion(Integer id) {
+       Optional<Quiz> quiz=quizDao.findById(id);
+       List<Question> questionfromDB= quiz.get().getQuestions();
+       List<QuestionWrapper> questionForUser=new ArrayList<>();
+
+       for(Question q: questionfromDB)
+       {
+        QuestionWrapper qw=new QuestionWrapper(q.getId(), q.getQuestionTitle(), q.getOption1(), q.getOption2(), q.getOption3(), q.getOption4());
+        questionForUser.add(qw);
+       }
+       
+       return new ResponseEntity<>(questionForUser,HttpStatus.OK);
+    }
+
+    public ResponseEntity<Integer> calculateResult(Integer id, List<Response> responses) {
+       
+        Quiz quiz=quizDao.findById(id).get();
+        List<Question> questions=quiz.getQuestions();
+
+        int right=0;
+        int i=0;
+
+        for(Response response : responses)
+        {
+            if(response.getResponse().equals(questions.get(i).getRightAnswer()))
+            {
+                right++;
+            }
+            i++;
+        }
+
+        return new ResponseEntity<>(right,HttpStatus.OK);
     }
 }
